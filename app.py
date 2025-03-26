@@ -1,11 +1,12 @@
 import streamlit as st
-import openai
 import json
-from docx import Document
 from io import BytesIO
+from docx import Document
 from fpdf import FPDF
+from openai import OpenAI, OpenAIError
 
-openai.api_key = st.secrets["openai_api_key"]
+# Initialize OpenAI client
+client = OpenAI(api_key=st.secrets["openai_api_key"])
 
 fields = [
     "customer_name", "industry", "company_background", "key_business_services",
@@ -54,20 +55,24 @@ if auto_extract:
     }}
     """
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2
-    )
-
     try:
-        extracted_json = json.loads(response["choices"][0]["message"]["content"])
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2
+        )
+        content = response.choices[0].message.content
+        extracted_json = json.loads(content)
         for key in extracted_json:
             st.session_state[key] = extracted_json[key]
         st.success("Fields auto-filled! Scroll down to review and edit.")
+    except OpenAIError as e:
+        st.error(f"OpenAI API Error: {str(e)}")
+    except json.JSONDecodeError:
+        st.error("Failed to parse GPT response as JSON.")
+        st.text(content)
     except Exception as e:
-        st.error(f"Could not parse GPT response: {e}")
-        st.text(response["choices"][0]["message"]["content"])
+        st.error(f"Unexpected error: {str(e)}")
 
 # Form fields
 st.header("Review & Edit Extracted Info")
@@ -144,5 +149,4 @@ if st.button("Generate POC Document"):
 
     st.download_button("📄 Download as PDF", pdf_buffer, file_name="POC_Scoping_Document.pdf", mime="application/pdf")
 
-    # Placeholder: Save to Google Drive (OAuth + PyDrive2 or Google API needed)
     st.info("🚀 Want to enable saving to Google Drive? You'll need to set up Google OAuth and use PyDrive2. Happy to help you with that next!")
