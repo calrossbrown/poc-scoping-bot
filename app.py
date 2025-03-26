@@ -1,0 +1,75 @@
+import streamlit as st
+import openai
+
+# Securely load your OpenAI API key
+openai.api_key = st.secrets["openai_api_key"]
+
+st.title("POC Scoping Document Generator")
+
+st.header("Customer Info")
+customer_name = st.text_input("Customer Name")
+industry = st.text_input("Industry")
+
+st.header("Company Background")
+company_background = st.text_area("Background about the company")
+
+st.header("Key Business Services")
+key_business_services = st.text_area("Business services relevant to this POC")
+
+st.header("Current Situation / Challenges")
+current_challenges = st.text_area("Challenges or blockers the company is facing")
+
+st.header("Decision Criteria")
+decision_criteria = st.text_area("How will success be evaluated?")
+
+st.header("Tech Stack")
+tech_stack = st.text_area("List key technologies (e.g. Azure, Meraki, NetApp)")
+
+st.header("Desired Outcomes")
+desired_outcomes = st.text_area("What does success look like?")
+
+st.header("Scope of Architecture")
+scope_of_architecture = st.text_area("What systems/devices/services are in-scope?")
+
+st.header("Timeline")
+timeline = st.text_area("Rough POC timeline")
+
+st.header("Key Contacts")
+key_contacts = st.text_area("Names, roles, and emails of stakeholders")
+
+if st.button("Generate POC Document"):
+    prompt = f"""
+    Create a professional POC Scoping Document using the following customer details:
+
+    Customer Name: {customer_name}
+    Industry: {industry}
+    Company Background: {company_background}
+    Key Business Services: {key_business_services}
+    Current Challenges: {current_challenges}
+    Decision Criteria: {decision_criteria}
+    Tech Stack: {tech_stack}
+    Desired Outcomes: {desired_outcomes}
+    Scope of Architecture: {scope_of_architecture}
+    Timeline: {timeline}
+    Key Contacts: {key_contacts}
+
+    Format it like this:
+    1. Executive Summary
+    2. Company Background
+    3. Key Business Services
+    4. Current Situation / Challenges
+    5. Decision Criteria
+    6. Scope of Architecture
+    7. Timeline
+    8. POV Team
+
+    Use a formal business tone.
+    """
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
+    doc = response['choices'][0]['message']['content']
+    st.subheader("Generated Document")
+    st.markdown(doc)
