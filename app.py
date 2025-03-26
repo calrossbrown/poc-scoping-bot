@@ -3,6 +3,7 @@ import openai
 import json
 from docx import Document
 from io import BytesIO
+from fpdf import FPDF
 
 openai.api_key = st.secrets["openai_api_key"]
 
@@ -120,12 +121,28 @@ if st.button("Generate POC Document"):
     st.subheader("Generated Document")
     st.markdown(document)
 
-    # Create and offer DOCX download
+    # DOCX download
     docx_file = Document()
     for section in document.strip().split("\n\n"):
         docx_file.add_paragraph(section)
-    buffer = BytesIO()
-    docx_file.save(buffer)
-    buffer.seek(0)
+    docx_buffer = BytesIO()
+    docx_file.save(docx_buffer)
+    docx_buffer.seek(0)
 
-    st.download_button("📄 Download as Word Document", buffer, file_name="POC_Scoping_Document.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    st.download_button("📄 Download as Word Document", docx_buffer, file_name="POC_Scoping_Document.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+    # PDF download
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    for line in document.strip().split("\n"):
+        pdf.multi_cell(0, 10, line)
+    pdf_buffer = BytesIO()
+    pdf.output(pdf_buffer)
+    pdf_buffer.seek(0)
+
+    st.download_button("📄 Download as PDF", pdf_buffer, file_name="POC_Scoping_Document.pdf", mime="application/pdf")
+
+    # Placeholder: Save to Google Drive (OAuth + PyDrive2 or Google API needed)
+    st.info("🚀 Want to enable saving to Google Drive? You'll need to set up Google OAuth and use PyDrive2. Happy to help you with that next!")
